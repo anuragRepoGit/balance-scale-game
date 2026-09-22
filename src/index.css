@@ -1,0 +1,8 @@
+@import 'tailwindcss';
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap');
+
+:root { font-family: 'DM Mono', monospace; color: #e6e2da; background: #08090a; font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; background: #08090a; }
+button, input { font: inherit; }
+button { cursor: pointer; }
