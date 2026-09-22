@@ -1,5 +1,5 @@
 export function calculateRound(players, choices) {
-  const activePlayers = players.filter((player) => !player.dead)
+  const activePlayers = players.filter((player) => !player.isDead && !player.dead)
   const values = activePlayers.map((player) => Number(choices[player.id] ?? 0))
   const average = values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0
   const target = average * 0.8
