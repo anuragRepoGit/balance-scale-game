@@ -254,7 +254,7 @@ export default function App() {
   }
 
   function startGame() {
-    if (!isHost || players.length === 0) return
+    if (!isHost || players.length < 2 || players.length > MAX_PLAYERS) return setError('At least 2 players are required to start')
     const nextPlayers = players.map((player) => ({ ...player, isLocked: false, currentGuess: null }))
     setPlayers(nextPlayers)
     setPhase('lock')
@@ -305,6 +305,8 @@ export default function App() {
     setSummary({ ...result, choices: values, players: nextPlayers, round: stateRef.current.round })
     setPhase('summary')
     setLockedLocally(false)
+    const survivors = nextPlayers.filter((player) => !player.isDead)
+    if (survivors.length <= 1) setGameOver({ winner: survivors[0]?.name ?? 'NO SURVIVOR' })
   }
 
   function nextRound() {
@@ -343,7 +345,8 @@ function Lobby({ name, setName, joinCode, setJoinCode, enterRoom, hasSupabase, e
 }
 
 function Room({ players, roomCode, isHost, startGame, leaveRoom, hasSupabase }) {
-  return <main className="room-shell"><header className="topline"><div className="brand-mark"><span>♦</span> KING OF DIAMONDS</div><button className="text-action" onClick={leaveRoom}><LogOut size={15} /> EXIT ROOM</button></header><section className="room-content"><div className="room-intro"><p className="eyebrow"><Users size={14} /> WAITING ROOM</p><h1>THE TABLE<br /><em>IS SET.</em></h1><p>Share the code. When the room is full of courage, the host may begin.</p></div><div className="room-code"><span>ROOM CODE</span><strong>{roomCode.slice(0, 3)} <b>{roomCode.slice(3)}</b></strong><button onClick={() => navigator.clipboard?.writeText(roomCode)}><Copy size={15} /> COPY CODE</button></div><div className="roster-head"><span>CONNECTED PLAYERS</span><strong>{String(players.length).padStart(2, '0')} / 05</strong></div><div className="roster">{[0, 1, 2, 3, 4].map((slot) => { const player = players[slot]; return <div className={`roster-row ${player ? 'occupied' : ''}`} key={player?.id ?? slot}><span className="slot-number">0{slot + 1}</span><span className="avatar">{player ? player.name[0].toUpperCase() : '—'}</span><span className="roster-name">{player?.name ?? 'AWAITING PLAYER'}</span>{slot === 0 && player && <span className="host-tag">HOST</span>}<span className="roster-status">{player ? 'READY' : 'OPEN'}</span></div> })}</div><div className="room-bottom"><div><Radio size={15} /> {hasSupabase ? 'BROADCAST ENCRYPTED' : 'LOCAL PREVIEW CHANNEL'}<br /><small>Max 5 players · first entrant is host</small></div>{isHost ? <button className="primary-action start-button" onClick={startGame}><Zap size={17} /> START THE GAME <ChevronRight size={17} /></button> : <div className="waiting-host"><Activity size={16} /> WAITING FOR HOST TO BEGIN</div>}</div></section></main>
+  const canStart = players.length >= 2 && players.length <= MAX_PLAYERS
+  return <main className="room-shell"><header className="topline"><div className="brand-mark"><span>♦</span> KING OF DIAMONDS</div><button className="text-action" onClick={leaveRoom}><LogOut size={15} /> EXIT ROOM</button></header><section className="room-content"><div className="room-intro"><p className="eyebrow"><Users size={14} /> WAITING ROOM</p><h1>THE TABLE<br /><em>IS SET.</em></h1><p>Share the code. When the room is full of courage, the host may begin.</p></div><div className="room-code"><span>ROOM CODE</span><strong>{roomCode.slice(0, 3)} <b>{roomCode.slice(3)}</b></strong><button onClick={() => navigator.clipboard?.writeText(roomCode)}><Copy size={15} /> COPY CODE</button></div><div className="roster-head"><span>CONNECTED PLAYERS</span><strong>{String(players.length).padStart(2, '0')} / 05</strong></div><div className="roster">{[0, 1, 2, 3, 4].map((slot) => { const player = players[slot]; return <div className={`roster-row ${player ? 'occupied' : ''}`} key={player?.id ?? slot}><span className="slot-number">0{slot + 1}</span><span className="avatar">{player ? player.name[0].toUpperCase() : '—'}</span><span className="roster-name">{player?.name ?? 'AWAITING PLAYER'}</span>{slot === 0 && player && <span className="host-tag">HOST</span>}<span className="roster-status">{player ? 'READY' : 'OPEN'}</span></div> })}</div><div className="room-bottom"><div><Radio size={15} /> {hasSupabase ? 'BROADCAST ENCRYPTED' : 'LOCAL PREVIEW CHANNEL'}<br /><small>2–5 players · first entrant is host</small></div>{isHost ? <button className="primary-action start-button" onClick={startGame} disabled={!canStart}><Zap size={17} /> {canStart ? 'START THE GAME' : 'WAITING FOR PLAYER'} <ChevronRight size={17} /></button> : <div className="waiting-host"><Activity size={16} /> WAITING FOR HOST TO BEGIN</div>}</div></section></main>
 }
 
 function GameBoard({ players, me, roomCode, round, phase, seconds, guess, setGuess, lockedLocally, lockNumber, summary, nextRound, leaveRoom, gameOver, setGameOver, hasSupabase }) {
@@ -359,6 +362,6 @@ function Summary({ summary, nextRound, alive }) {
   return <div className="overlay"><section className="summary-modal"><div className="modal-kicker"><span>ROUND {String(summary.round).padStart(2, '0')} // DECRYPTED</span><span><Activity size={14} /> RESULT</span></div><h2>THE SCALE<br /><em>HAS SPOKEN.</em></h2><div className="result-metrics"><div><span>AVERAGE</span><strong>{summary.average.toFixed(1)}</strong></div><div className="target-metric"><span>TARGET × 0.8</span><strong>{summary.target.toFixed(1)}</strong></div><div><span>WINNER</span><strong>{summary.winnerName}</strong></div></div><div className="numbers-table"><div className="table-head"><span>PLAYER</span><span>CHOICE</span><span>DELTA</span></div>{summary.players.map((player) => <div className="table-row" key={player.id}><span>{player.name}</span><span>{summary.choices[player.id]}</span><span className={summary.penalties[player.id] === 0 ? 'win-delta' : 'loss-delta'}>{summary.penalties[player.id] === 0 ? '+ WIN' : summary.penalties[player.id]}</span></div>)}</div><div className="modal-footer"><span>{alive <= 1 ? 'FINAL CALCULATION' : 'NEXT ROUND READY'}</span><button className="primary-action" onClick={nextRound}>{alive <= 1 ? 'VIEW OUTCOME' : 'CONTINUE'} <ChevronRight size={17} /></button></div></section></div>
 }
 
-function GameOver({ setGameOver }) {
-  return <div className="game-over"><div className="game-over-grid" /><Flame size={46} /><p>PROTOCOL TERMINATED</p><h2>GAME OVER</h2><strong>ACID SCALE TILTED</strong><button className="primary-action" onClick={() => setGameOver(false)}>ACKNOWLEDGE <ChevronRight size={17} /></button></div>
+function GameOver({ gameOver = { winner: 'FINAL RESULT' }, setGameOver }) {
+  return <div className="game-over"><div className="game-over-grid" /><Flame size={46} /><p>PROTOCOL TERMINATED</p><h2>GAME OVER</h2><strong>ACID SCALE TILTED</strong><div className="winner-line">SURVIVOR <b>{gameOver.winner}</b></div><button className="primary-action" onClick={() => setGameOver(false)}>VIEW FINAL RESULT <ChevronRight size={17} /></button></div>
 }
