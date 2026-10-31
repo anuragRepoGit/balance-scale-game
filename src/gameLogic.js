@@ -16,7 +16,7 @@ export function calculateRound(players, choices) {
   } else {
     const eligible = activePlayers.filter((player) => !duplicateIds.has(player.id))
     const exactTargetPlayer = activePlayers.length === 3
-      ? eligible.find((player) => normalizedChoices[player.id] === target)
+      ? eligible.find((player) => Math.abs(normalizedChoices[player.id] - target) < 1e-9)
       : null
     const ranked = eligible.map((player) => ({ player, distance: Math.abs(normalizedChoices[player.id] - target) })).sort((a, b) => a.distance - b.distance)
     winnerId = exactTargetPlayer?.id ?? ranked[0]?.player.id ?? null
